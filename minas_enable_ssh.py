@@ -89,6 +89,8 @@ def is_minas_device(ip):
 def get_nas_ip():
     print("尝试自动获取小米智能存储的内网 IP...")
     try:
+        if sys.platform != "win32":
+            raise Exception('netbios name only apply for windows')
         return socket.gethostbyname('SmartStorage')
     except:
         pass
