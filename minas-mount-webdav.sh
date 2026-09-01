@@ -160,6 +160,7 @@ if [ $VERBOSE -eq 1 ]; then
 fi
 
 MOUNT_POINT="$HOME/minas"
+echo "挂载路径：$MOUNT_POINT"
 check_rclone_mount() {
   if ! mountpoint -q "$MOUNT_POINT"; then
     return 1
