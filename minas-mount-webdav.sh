@@ -171,7 +171,7 @@ check_rclone_mount() {
 if check_rclone_mount; then
   echo "检测到 minas 已挂载："
 else
-  echo "挂载 WebDAV 中..."
+  echo "挂载 minas 中..."
   rclone config create minas webdav \
   url "https://$NAS_IP:5000/pool0/data" \
   vendor other \
@@ -185,7 +185,8 @@ else
     --vfs-cache-mode writes \
     --dir-cache-time 30s \
     --daemon
-    echo "rclone 挂载 minas 成功："
+  sleep 3
+  echo "rclone 挂载  成功："
 fi
 
 ls $MOUNT_POINT
