@@ -106,7 +106,6 @@ def get_nas_ip():
     for i in range(1, 255):
         ip = f"{prefix}.{i}"
         if is_minas_device(ip):
-            print(f"已发现小米智能存储 IP: {ip}")
             return ip
     print("无法自动获取小米智能存储 IP，请检查设备状态并手动输入")
     return read_nas_ip()
@@ -385,6 +384,7 @@ if __name__ == "__main__":
     print("小米智能存储一键开启 SSH + root    @Scruel 2026.08")
     print("################################################")
     NAS_IP = get_nas_ip()
+    print(f"小米智能存储内网 IP: {NAS_IP}")
     # 如果自动扫描未获得CN，则单独获取
     CN = get_cert_cn_from_ip()
     # 2. 定位证书文件
