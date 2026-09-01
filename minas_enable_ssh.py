@@ -89,6 +89,10 @@ def is_minas_device(ip):
 def get_nas_ip():
     print("尝试自动获取小米智能存储的内网 IP...")
     try:
+        return socket.gethostbyname('SmartStorage')
+    except:
+        pass
+    try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('114.114.114.114', 53))
         prefix = '.'.join(s.getsockname()[0].split('.')[:3])
