@@ -167,7 +167,7 @@ ln -s /firmware/models models
 sed -i 's|:/root:|:/home/rootx:|' /etc/passwd
 
 echo "$PUB_KEY" > /home/rootx/.ssh/authorized_keys
-chmod 600 /home/rootx/.ssh
+chmod 700 /home/rootx/.ssh
 chmod 600 /home/rootx/.ssh/authorized_keys
 echo 'DROPBEAR_EXTRA_ARGS=" -s"' > /etc/default/dropbear
 
