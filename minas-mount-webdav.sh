@@ -186,7 +186,7 @@ else
     --dir-cache-time 30s \
     --daemon
   sleep 3
-  echo "rclone 挂载  成功："
+  echo "rclone 挂载 minas 成功："
 fi
 
 ls $MOUNT_POINT
