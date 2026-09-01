@@ -163,7 +163,7 @@ cat > /tmp/enable-ssh.sh << EOF
 [ ! -f /etc/passwd.bak ] && cp /etc/passwd /etc/passwd.bak
 
 mkdir -p /home/rootx/.ssh
-ln -s /firmware/models models
+ln -snf /firmware/models /home/rootx/models
 sed -i 's|:/root:|:/home/rootx:|' /etc/passwd
 
 echo "$PUB_KEY" > /home/rootx/.ssh/authorized_keys
