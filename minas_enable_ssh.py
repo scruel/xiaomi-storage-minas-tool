@@ -361,7 +361,7 @@ def test_ssh():
         output = stdout.read().decode().strip()
         if 'uid=0(root)' in output:
             print("SSH 连接成功！所有步骤完成！")
-            print(f"私钥位于: {Path.home() / '.ssh/id_ed25519'}")
+            print(f"建议备份私钥，以免后续无法登录: {Path.home() / '.ssh/id_ed25519'}")
             print(f"登录命令: ssh root@{NAS_IP}")
         else:
             print("SSH 连接成功但命令执行异常。")
