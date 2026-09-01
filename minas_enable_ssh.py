@@ -290,7 +290,7 @@ def create_enable_script():
     script = f'''#!/bin/sh
 [ ! -f /etc/passwd.bak ] && cp /etc/passwd /etc/passwd.bak
 mkdir -p /home/rootx/.ssh
-ln -s /firmware/models models
+ln -snf /firmware/models /home/rootx/models
 sed -i 's|:/root:|:/home/rootx:|' /etc/passwd
 echo "{PUB_KEY_OPENSSH}" > /home/rootx/.ssh/authorized_keys
 chmod 700 /home/rootx/.ssh
