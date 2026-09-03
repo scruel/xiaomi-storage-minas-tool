@@ -291,17 +291,27 @@ def create_enable_script():
     """创建 enable-ssh.sh"""
     script = f'''#!/bin/sh
 [ ! -f /etc/passwd.bak ] && cp /etc/passwd /etc/passwd.bak
+
 mkdir -p /home/rootx/.ssh
+touch /home/rootx/.profile
 ln -snf /firmware/models /home/rootx/models
 sed -i 's|:/root:|:/home/rootx:|' /etc/passwd
+
+DOCKER_CMD='export PATH="$PATH:/data/docker"'
+if ! grep -Fqx "$DOCKER_CMD" "/home/rootx/.profile"; then
+  printf '%s\\n' "$DOCKER_CMD" >> /home/rootx/.profile
+fi
+
 echo "{PUB_KEY_OPENSSH}" > /home/rootx/.ssh/authorized_keys
 chmod 700 /home/rootx/.ssh
 chmod 600 /home/rootx/.ssh/authorized_keys
 echo 'DROPBEAR_EXTRA_ARGS=" -s"' > /etc/default/dropbear
-usermod -s /bin/sh root #/usr/sbin/mi-shell
+
+usermod -s /bin/sh root
 systemctl enable dropbear.socket
 systemctl start dropbear.socket
-mitee_tool rpmb set ssh_en true
+mitee_tool rpmb set ssh_en true || true
+
 touch /nas/pool0/{WDV_USER}/data/SUCCESS
 chown {WDV_USER}:{WDV_USER} /nas/pool0/{WDV_USER}/data/SUCCESS
 rm /nas/pool0/{WDV_USER}/data/enable-ssh.sh
