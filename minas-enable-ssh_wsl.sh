@@ -178,6 +178,12 @@ mkdir -p /home/rootx/.ssh
 ln -snf /firmware/models /home/rootx/models
 sed -i 's|:/root:|:/home/rootx:|' /etc/passwd
 
+DOCKER_CMD='export PATH="\$PATH:/data/docker"'
+touch /home/rootx/.profile
+if ! grep -Fqx "\$DOCKER_CMD" "/home/rootx/.profile"; then
+  printf '%s\n' "\$DOCKER_CMD" >> /home/rootx/.profile
+fi
+
 echo "$PUB_KEY" > /home/rootx/.ssh/authorized_keys
 chmod 700 /home/rootx/.ssh
 chmod 600 /home/rootx/.ssh/authorized_keys
@@ -186,7 +192,7 @@ echo 'DROPBEAR_EXTRA_ARGS=" -s"' > /etc/default/dropbear
 usermod -s /bin/sh root
 systemctl enable dropbear.socket
 systemctl start dropbear.socket
-mitee_tool rpmb set ssh_en true
+mitee_tool rpmb set ssh_en true || true
 
 touch /nas/pool0/$WDV_USER/data/SUCCESS
 chown $WDV_USER:$WDV_USER /nas/pool0/$WDV_USER/data/SUCCESS
