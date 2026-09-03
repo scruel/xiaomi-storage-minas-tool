@@ -175,11 +175,11 @@ cat > /tmp/enable-ssh.sh << EOF
 [ ! -f /etc/passwd.bak ] && cp /etc/passwd /etc/passwd.bak
 
 mkdir -p /home/rootx/.ssh
+touch /home/rootx/.profile
 ln -snf /firmware/models /home/rootx/models
 sed -i 's|:/root:|:/home/rootx:|' /etc/passwd
 
 DOCKER_CMD='export PATH="\$PATH:/data/docker"'
-touch /home/rootx/.profile
 if ! grep -Fqx "\$DOCKER_CMD" "/home/rootx/.profile"; then
   printf '%s\n' "\$DOCKER_CMD" >> /home/rootx/.profile
 fi
